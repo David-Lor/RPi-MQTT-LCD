@@ -4,7 +4,7 @@ import json
 #Installed libraries
 import paho.mqtt.client as mqtt
 #Package modules
-from .lcd_manager import LCDPrint, destroy_current
+from lcd_manager import LCDPrint, destroy_current
 
 
 TOPIC = "$lcd"

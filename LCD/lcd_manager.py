@@ -3,14 +3,14 @@
 import threading
 from datetime import datetime
 #Package modules
-from .lcd_i2c import lcd_print, lcd_clear
+from lcd_i2c import lcd_print, lcd_clear
 
 current_element = None #Save the LCDPrint object that's currently being printed
 
 def destroy_current(clear=False):
     if current_element is not None:
         current_element.destroy(clear=clear)
-    else: #Call lcd_clear just in case
+    elif clear:
         lcd_clear()
 
 class LCDPrint(object):
@@ -43,6 +43,7 @@ class LCDPrint(object):
         self.print()
     
     def print(self):
+        global current_element
 
         def rotate_f():
             #This function is threaded when ANY of the lines is list (multitext)
@@ -84,7 +85,7 @@ class LCDPrint(object):
                 return
             #else, we can print! but first we must destroy the current element
             current_element.destroy()
-        global current_element
+
         current_element = self #Set this element as current element being printed
         #Check if we must perform rotate line/s. Execute a control thread if so
         if (type(self.lineA), type(self.lineB)) != (str, str): #rotate lines, at least on one line
