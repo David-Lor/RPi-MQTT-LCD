@@ -14,7 +14,7 @@ def destroy_current(clear=False):
         lcd_clear()
 
 class LCDPrint(object):
-    def __init__(self, lineA, lineB, priority=100, min_time=0, max_time=0, rotate_frequency=0.5, clear_on_destroy=False):
+    def __init__(self, lineA, lineB, priority=100, min_time=0, max_time=0, rotate_frequency=0.5, clear_on_destroy=False, center=True):
         """
         :param lineA, lineB: lines to print (string, or List of strings for rotary printing)
         :param priority: priority of this message (default=100, higher=more priority)
@@ -22,6 +22,7 @@ class LCDPrint(object):
         :param max_time: time limit for the message to be printed. After this time, will be erased (default=0 -> do not erase)
         :param rotate_frequency: time between message switching
         :param clear_on_destroy: clear LCD when message is destroyed (default=False)
+        :param center: center text to 16 characters
         Even if clear_on_destroy is False, screen will be cleared if:
          - max_time is defined
          - destroy method is called with "destroy=True" param
@@ -29,7 +30,7 @@ class LCDPrint(object):
         self.lineA = lineA
         self.lineB = lineB
         self.priority = priority
-        self.min_time = min_time #TODO IMPLEMENTAR
+        self.min_time = min_time
         if min_time != 0:
             self.created = datetime.now()
         self.max_time = max_time
@@ -39,9 +40,16 @@ class LCDPrint(object):
         self.maxtime_thread = None
         self.maxtime_thread_stopEvent = None
         self.clear_on_destroy = clear_on_destroy
-        self.printed = None #Timestamp when message is printed
+        self.center = center
+        #self.printed = None #Timestamp when message is printed
         self.print()
-    
+
+
+    def lcd_print(self, text, line):
+        if self.center:
+            text = text.center(16)
+        lcd_print(text, line)
+
     def print(self):
         global current_element
 
@@ -49,13 +57,13 @@ class LCDPrint(object):
             #This function is threaded when ANY of the lines is list (multitext)
             lines = (self.lineA, self.lineB) #lineA/B can be list or string
             types = tuple(type(e) for e in lines)
-            print("lines={} | types={}".format(lines, types)) #DEBUG
+            #print("lines={} | types={}".format(lines, types)) #DEBUG
             if types.count(list) == 1: #One line singletext, one line multitext
-                print("one line is multitext") #DEBUG
+                #print("one line is multitext") #DEBUG
                 singletextLine = lines[types.index(str)]
-                lcd_print(singletextLine, lines.index(singletextLine)) #Print singleline
-            else: #Both lines multitext
-                print("both lines are multitext") #DEBUG
+                self.lcd_print(singletextLine, lines.index(singletextLine)) #Print singleline
+            #else: #Both lines multitext
+                #print("both lines are multitext") #DEBUG
                 #nothing else to do here
             #Loop!
             printIndex = [0, 0] #Indexes of texts lines[x] to print
@@ -66,8 +74,9 @@ class LCDPrint(object):
                     lineIndex = lines.index(line)
                     messageIndex = printIndex[lineIndex]
                     message = line[messageIndex]
-                    print("imprimo por loop:\nmensaje={}\nlinea={}".format(message, lineIndex))
-                    lcd_print(message, lineIndex)
+                    #print("imprimo por loop:\nmensaje={}\nlinea={}".format(message, lineIndex))
+                    #lcd_print(message, lineIndex)
+                    self.lcd_print(message, lineIndex)
                     #Update printIndex for next loop iteration
                     messageIndex += 1
                     if messageIndex == len(line):
@@ -79,9 +88,9 @@ class LCDPrint(object):
             self.maxtime_thread_stopEvent.wait(timeout=self.max_time)
             self.destroy(clear=True)
 
-        if current_element is not None: #If there's something being printed
-            #if self.priority < current_element.priority: #Do nothing if we have less priority than printed element
-            if not self.check_priority():
+        if current_element is not None: #If something is currently being printed
+            #if self.priority < current_element.priority:
+            if not self.check_priority(): #Do nothing if we have less priority than printed element
                 return
             #else, we can print! but first we must destroy the current element
             current_element.destroy()
@@ -97,8 +106,11 @@ class LCDPrint(object):
             )
             self.rotate_thread.start()
         else: #if no rotate lines, just print normal
-            lcd_print(self.lineA, 0)
-            lcd_print(self.lineB, 1)
+            #lcd_print(self.lineA, 0)
+            #lcd_print(self.lineB, 1)
+            self.lcd_print(self.lineA, 0)
+            self.lcd_print(self.lineB, 1)
+        
         #Create max_time killer thread if needed
         if self.max_time != 0:
             self.maxtime_thread_stopEvent = threading.Event()
@@ -125,14 +137,14 @@ class LCDPrint(object):
     def check_priority(self):
         """Check if the current text can be printed.
         It depends on this object's priority and the current_element priority.
-        If current_element has a min_time value and it's been passed, we can print.
+        If current_element has a min_time value and it expired, we can print.
         :return: True if it's safe to print
         :return: False if we can't print
         """
         if current_element is None:
             return True
         if self.priority < current_element.priority:
-            if current_element.min_time != 0 and (datetime.now() - current_element.created) > current_element.min_time:
+            if current_element.min_time != 0 and (datetime.now() - current_element.created).total_seconds() > current_element.min_time:
                 return True
             return False
         return True

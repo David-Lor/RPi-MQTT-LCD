@@ -121,7 +121,7 @@ lock = threading.Lock()
 def lcd_print(message,line):
     # Send string to display
     # message=string, line=LCD line to print (0,1,2,3)
-    if message == "**ignore**":
+    if "**ignore**" in message:
         return
     if not lock.acquire(timeout=0.1):
     #if not lock.acquire(blocking=False):

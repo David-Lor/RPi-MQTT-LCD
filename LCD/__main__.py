@@ -20,6 +20,7 @@
 #   Para limpiar toda la pantalla usar el comodín "**clearscreen**"
 #   (todos los comodines en "lineA")
 #   Para limpiar una línea se puede enviar string vacío ""
+#
 # Ejemplo 1: {"lineA":"hola", "lineB":"hamijos"}
 # Ejemplo 2: {"lineA":["hola", "holita"], "lineB":"hamijos"}
 # Ejemplo 3: {"lineA":"hola", "lineB":["poios", "hermanous"]}

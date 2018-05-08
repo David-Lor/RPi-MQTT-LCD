@@ -47,6 +47,11 @@ def on_message(client, userdata, msg):
 			autoclear = bool(payload["autoclear"])
 		else:
 			autoclear = False
+		#center is optional, 1 by default
+		if "center" in payload:
+			center = bool(payload["center"])
+		else:
+			center = True
 		LCDPrint(
 			lineA=lineA,
 			lineB=lineB,
@@ -54,7 +59,8 @@ def on_message(client, userdata, msg):
 			min_time=min_time,
 			max_time=max_time,
 			rotate_frequency=rotfreq,
-			clear_on_destroy=autoclear
+			clear_on_destroy=autoclear,
+			center=center
 		)
 	except Exception as ex:
 		print(ex)
